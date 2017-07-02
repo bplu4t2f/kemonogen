@@ -2,4 +2,6 @@
 
 けものフレンズ ロゴジェネレータ
 
-https://aratama.github.io/kemonogen/
+https://bplu4t2f.github.io/kemonogen/
+
+Original: aratama
