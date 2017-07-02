@@ -75,6 +75,7 @@ window.onload = function()
 	var seedTopTilt = (2147483648 * Math.random()) | 0;
 	var seedTopColors = (2147483648 * Math.random()) | 0;
 	var seedMiddle = (2147483648 * Math.random()) | 0;
+	var seedMiddleRot = (2147483648 * Math.random()) | 0;
 	
 	var maximum_tilt = 0.2;
 /*
@@ -150,10 +151,12 @@ window.onload = function()
 	var randomizeTopTiltButton = document.getElementById("randomize_top_tilt");
 	var randomizeTopColorsButton = document.getElementById("randomize_top_colors");
 	var randomizeMiddleButton = document.getElementById("randomize_middle");
-
+	var randomizeMiddleTiltButton = document.getElementById("randomize_middle_tilt");
+	
 	var topTiltLabel = document.getElementById("top_tilt_seed");
 	var topColorLabel = document.getElementById("top_color_seed");
 	var middleLabel = document.getElementById("middle_seed");
+	var middleTiltLabel = document.getElementById("middle_tilt_seed");
 
 
     function update(){
@@ -177,6 +180,7 @@ window.onload = function()
 		topTiltLabel.innerHTML = seedTopTilt;
 		topColorLabel.innerHTML = seedTopColors;
 		middleLabel.innerHTML = seedMiddle;
+		middleTiltLabel.innerHTML = seedMiddleRot;
 		
 		var topTextSize = 30;
         var topMiddlePadding = 30;
@@ -286,6 +290,7 @@ window.onload = function()
         
 		var randomMiddle = new Random(seedMiddle);
 		var middleColorsBag = new RandomBag(colorTuples, randomMiddle);
+		var randomMiddleRot = new Random(seedMiddleRot);
         for(var i = 0; i < middleText.length; i++){
             var c = middleText.slice(i, i + 1);
 
@@ -301,7 +306,7 @@ window.onload = function()
             g.save();
 
             // clip
-            var rot = randomMiddle.nextDouble();
+            var rot = randomMiddleRot.nextDouble();
             g.beginPath();
             g.save();
             g.translate(middleTextSize * 0.5, middleTextSize * 0.5);            
@@ -385,6 +390,11 @@ window.onload = function()
 	randomizeMiddleButton.addEventListener("click", function()
 	{
 		seedMiddle = (2147483648 * Math.random()) | 0;
+		update();
+	});
+	randomizeMiddleTiltButton.addEventListener("click", function()
+	{
+		seedMiddleRot = (2147483648 * Math.random()) | 0;
 		update();
 	});
 		
