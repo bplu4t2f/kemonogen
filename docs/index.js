@@ -1,5 +1,83 @@
-window.onload = function(){
+Random = function(seed)
+{
+	this.xors = {
+        x: (seed) | 0,
+        y: (2) | 0,
+        z: (3) | 0,
+        w: (5) | 0
+    };
+	
+	this.nextInt = function()
+	{
+		var t = this.xors.x ^ (this.xors.x << 11);
+        this.xors.x = this.xors.y;
+        this.xors.y = this.xors.z;
+        this.xors.z = this.xors.w;
+        return this.xors.w = (this.xors.w^(this.xors.w>>>19))^(t^(t>>>8));
+	};
+	
+	this.nextIndex = function(max)
+	{
+		return Math.abs(this.nextInt()) % max;
+	}
+	
+	for (var i = 0; i < 4; ++i)
+	{
+		this.nextInt();
+	}
+	
+	this.nextDouble = function()
+	{
+		return this.nextInt() / 2147483648;
+	}
+};
 
+RandomBag = function(arr, random)
+{
+	if (arr == null || arr.length < 2) return;
+	this.arr = arr;
+	this.random = random;
+	this.availableIndices = [];
+	this.lastElementIndex = null;
+	
+	this.next = function()
+	{
+		if (this.availableIndices.length == 0)
+		{
+			// need to rebuild
+			for (var i = 0; i < this.arr.length; ++i)
+			{
+				this.availableIndices.push(i);
+			}
+		}
+		
+		var indexIndex = -1;
+		var randomIndex = -1;
+		do
+		{
+			indexIndex = random.nextIndex(this.availableIndices.length);
+			randomIndex = this.availableIndices[indexIndex];
+		}
+		while (randomIndex == this.lastElementIndex);
+		
+		var tmp = this.arr[randomIndex];
+		this.availableIndices.splice(indexIndex, 1);
+		this.lastElementIndex = randomIndex;
+		return tmp;
+	}
+};
+
+window.onload = function()
+{
+	// Initial seed values for top tilt, top colors and middle.
+	// These are used to create new Random objects later.
+	// Also need to be displayed later and can be overwritten.
+	var seedTopTilt = (2147483648 * Math.random()) | 0;
+	var seedTopColors = (2147483648 * Math.random()) | 0;
+	var seedMiddle = (2147483648 * Math.random()) | 0;
+	
+	var maximum_tilt = 0.2;
+/*
     var seed = {
         x: (2147483648 * Math.random()) | 0,
         y: (2147483648 * Math.random()) | 0,
@@ -27,8 +105,19 @@ window.onload = function(){
         }
         return ys;
     }
+	
+	function get_random_element(arr, xors)
+	{
+		var index = Math.abs(randomInt(xors)) % arr.length;
+		var tmp = arr[index];
+		
+		//alert("" + arr + " -- " + index + "//" + tmp);
+		
+		return tmp;
+	}
+	*/
 
-    var colorTuples = shuffle([
+    var colorTuples = [
         ["#16ae67", "#90c31f"], 
         ["#ea5421", "#f39800"], 
         ["#00ac8e", "#e4007f"], 
@@ -36,9 +125,9 @@ window.onload = function(){
         ["#9fa0a0", "#c9caca"], 
         ["#e60013", "#f39800"], 
         ["#c3d600", "#a42e8c"]
-    ]);
+    ];
 
-    var topColors = shuffle(["#04ad8f", "#a6ce48", "#f3a118", "#ea6435", "#17b297", "#e30983", "#2782c4", "#1aa6e7", "#b5b5b5", "#f29905", "#e50011", "#ccdc26", "#a5328d", "#0aaa60", "#91c423", "#f29300", "#ec5f69", "#22b69e", "#e63e9b", "#917220"]);
+    var topColors = ["#04ad8f", "#a6ce48", "#f3a118", "#ea6435", "#17b297", "#e30983", "#2782c4", "#1aa6e7", "#b5b5b5", "#f29905", "#e50011", "#ccdc26", "#a5328d", "#0aaa60", "#91c423", "#f29300", "#ec5f69", "#22b69e", "#e63e9b", "#917220"];
 
 
     var topInput = document.querySelector("#top");
@@ -57,27 +146,39 @@ window.onload = function(){
 
     var canvas = document.createElement("canvas");
     var g = canvas.getContext("2d");
+	
+	var randomizeTopTiltButton = document.getElementById("randomize_top_tilt");
+	var randomizeTopColorsButton = document.getElementById("randomize_top_colors");
+	var randomizeMiddleButton = document.getElementById("randomize_middle");
 
+	var topTiltLabel = document.getElementById("top_tilt_seed");
+	var topColorLabel = document.getElementById("top_color_seed");
+	var middleLabel = document.getElementById("middle_seed");
 
 
     function update(){
-        setTimeout(function(){
-            setText(topInput.value, middleInput.value, bottomInput.value);
-        });
-    }      
-    middleInput.addEventListener("change", update);
-    middleInput.addEventListener("keydown", update);    
-    topInput.addEventListener("change", update);
-    topInput.addEventListener("keydown", update);  
-    bottomInput.addEventListener("change", update);
-    bottomInput.addEventListener("keydown", update);        
+		// enforce closure
+		var topValue = topInput.value;
+		var middleValue = middleInput.value;
+		var bottomValue = bottomInput.value;
+        //setTimeout(function()
+		//{
+		//	console.log(topInput.value);
+            setText(topValue, middleValue, bottomValue);
+        //});
+    }
+	
+    topInput.addEventListener("input", update);    
+    middleInput.addEventListener("input", update);
+    bottomInput.addEventListener("input", update);        
 
-    function setText(topText, middleText, bottomText){
-
-
-        
-
-        var topTextSize = 30;
+    function setText(topText, middleText, bottomText)
+	{
+		topTiltLabel.innerHTML = seedTopTilt;
+		topColorLabel.innerHTML = seedTopColors;
+		middleLabel.innerHTML = seedMiddle;
+		
+		var topTextSize = 30;
         var topMiddlePadding = 30;
         var middleTextSize = 120;
         var middleBottomPadding = 20;        
@@ -85,7 +186,8 @@ window.onload = function(){
         var margin = 60;
         var bottomTextLetterSpacing = 20;
 
-        var topTextFont = `normal bold ${topTextSize}px/2 "Yu Mincho"`;
+        //var topTextFont = `normal bold ${topTextSize}px/2 "Yu Mincho"`;
+		var topTextFont = `normal bold ${topTextSize}px/2 "Yu Mincho", "Trebuchet MS", sans-serif`;
         var middleTextFont = `normal 400 ${middleTextSize}px/2 japarifont`;
         var bottomTextFont = `normal 400 ${bottomTextSize}px/2 PlayBold`;
 
@@ -112,7 +214,7 @@ window.onload = function(){
 
         // stroke top text 
         function iterate(callback){
-            var xors = Object.assign({}, seed);
+            var randomTilt = new Random(seedTopTilt);
             g.save();
 
             g.font = topTextFont;        
@@ -125,7 +227,7 @@ window.onload = function(){
             var x = 0;
             for(var i = 0; i < topText.length; i++){
                 var c = topText.slice(i, i + 1);
-                var rot = random(xors) * 0.2;
+                var rot = randomTilt.nextDouble() * maximum_tilt;
                 var metrics = g.measureText(c);
                 g.save();
                 g.translate(metrics.width * 0.5, topTextSize * 0.5);
@@ -138,13 +240,13 @@ window.onload = function(){
             g.restore();
         }
         g.save();
-        var xors = Object.assign({}, seed);
         
 
 
         var topColors = ["#04ad8f", "#a6ce48", "#f3a118", "#ea6435", "#17b297", "#e30983", "#2782c4", "#1aa6e7", "#b5b5b5", "#f29905", "#e50011", "#ccdc26", "#a5328d", "#0aaa60", "#91c423", "#f29300", "#ec5f69", "#22b69e", "#e63e9b", "#917220"];
 
-  
+		var randomTopColors = new Random(seedTopColors);
+		var topColorsBag = new RandomBag(topColors, randomTopColors);
         iterate(function(i, c){
             g.shadowColor = "transparent";
 
@@ -153,12 +255,16 @@ window.onload = function(){
         iterate(function(i, c){
             g.shadowColor = "rgba(0, 0, 0, 0.3)";
             g.shadowBlur = 10;
-            g.fillStyle = topColors[i % topColors.length];
+            //g.fillStyle = topColors[i % topColors.length];
+			g.fillStyle = topColorsBag.next();
             g.fillText(c, 0, 0);
         });
 
 
-
+		
+		//
+		// middle text
+		//
 
 
 
@@ -177,21 +283,25 @@ window.onload = function(){
         g.strokeText(middleText, 0, 0);
         
         // fill charactors
-        var x = 0;
-        var xors = Object.assign({}, seed);
+        
+		var randomMiddle = new Random(seedMiddle);
+		var middleColorsBag = new RandomBag(colorTuples, randomMiddle);
         for(var i = 0; i < middleText.length; i++){
             var c = middleText.slice(i, i + 1);
 
+			var the_tuple = middleColorsBag.next();
+			
             // base color
             g.shadowColor = "rgba(0, 0, 0, 0.6)";
             g.shadowBlur = 10;
-            g.fillStyle = colorTuples[i % colorTuples.length][0];
+            //g.fillStyle = colorTuples[i % colorTuples.length][0];
+            g.fillStyle = the_tuple[0];
             g.fillText(c, 0, 0);
 
             g.save();
 
             // clip
-            var rot = random(xors);
+            var rot = randomMiddle.nextDouble();
             g.beginPath();
             g.save();
             g.translate(middleTextSize * 0.5, middleTextSize * 0.5);            
@@ -208,7 +318,8 @@ window.onload = function(){
             // upper color
             g.shadowColor = "none";
             g.shadowBlur = 0;
-            g.fillStyle = colorTuples[i % colorTuples.length][1];
+            //g.fillStyle = colorTuples[i % colorTuples.length][1];
+			g.fillStyle = the_tuple[1];
             g.fillText(c, 0, 0);
 
             g.restore();
@@ -260,7 +371,23 @@ window.onload = function(){
     middleInput.value = "けものフレンズ";
     bottomInput.value = "KEMONO FRIENDS";
     update();
-
+	
+	randomizeTopTiltButton.addEventListener("click", function()
+	{
+		seedTopTilt = (2147483648 * Math.random()) | 0;
+		update();
+	});
+	randomizeTopColorsButton.addEventListener("click", function()
+	{
+		seedTopColors = (2147483648 * Math.random()) | 0;
+		update();
+	});
+	randomizeMiddleButton.addEventListener("click", function()
+	{
+		seedMiddle = (2147483648 * Math.random()) | 0;
+		update();
+	});
+		
     download.addEventListener("click", function(){
         canvas.toBlob(function(blob) {
             saveAs(blob, middleInput.value + ".png");
