@@ -147,6 +147,8 @@ window.onload = function()
 
     var canvas = document.createElement("canvas");
     var g = canvas.getContext("2d");
+	var tmpCanvas = document.createElement("canvas");
+	var tmpG = tmpCanvas.getContext("2d");
 	
 	var randomizeTopTiltButton = document.getElementById("randomize_top_tilt");
 	var randomizeTopColorsButton = document.getElementById("randomize_top_colors");
@@ -209,10 +211,15 @@ window.onload = function()
         ) + margin;
         canvas.height = margin + topTextSize + topMiddlePadding + middleTextSize + middleBottomPadding + bottomTextSize + margin;
 
+		tmpCanvas.width = middleTextSize * 2;
+		tmpCanvas.height = middleTextSize * 2;
+		
         // prepare canvas
         g.save();
         g.clearRect(0, 0, canvas.width, canvas.height);
         g.textBaseline = "top";
+		
+		tmpG.textBaseline = "top";
 
 
 
@@ -273,7 +280,6 @@ window.onload = function()
 
 
         // centerize
-        var metrics = g.measureText(middleText);
         g.translate((canvas.width - middleMetrics.width) * 0.5, margin + topTextSize + topMiddlePadding);
 
         // stroke outline
@@ -285,49 +291,54 @@ window.onload = function()
         g.lineCap = "round";
         g.lineJoin = "round";
         g.strokeText(middleText, 0, 0);
-        
-        // fill charactors
-        
+		
+        // fill characters
+
 		var randomMiddle = new Random(seedMiddle);
 		var middleColorsBag = new RandomBag(colorTuples, randomMiddle);
 		var randomMiddleRot = new Random(seedMiddleRot);
-        for(var i = 0; i < middleText.length; i++){
+        for (var i = 0; i < middleText.length; i++)
+		{
             var c = middleText.slice(i, i + 1);
 
 			var the_tuple = middleColorsBag.next();
 			
-            // base color
-            g.shadowColor = "rgba(0, 0, 0, 0.6)";
-            g.shadowBlur = 10;
-            //g.fillStyle = colorTuples[i % colorTuples.length][0];
-            g.fillStyle = the_tuple[0];
-            g.fillText(c, 0, 0);
-
-            g.save();
-
-            // clip
-            var rot = randomMiddleRot.nextDouble();
-            g.beginPath();
-            g.save();
-            g.translate(middleTextSize * 0.5, middleTextSize * 0.5);            
-            g.rotate(rot);
-            g.translate(-middleTextSize * 0.5, -middleTextSize * 0.5);
-            g.moveTo(-middleTextSize * 2, middleTextSize * 0.5);
-            g.lineTo(middleTextSize * 2, middleTextSize * 0.5);
-            g.lineTo(middleTextSize * 2, middleTextSize * 2);
-            g.lineTo(-middleTextSize * 2, middleTextSize * 2);
-            g.closePath();
-            g.restore();
-            g.clip();
-
-            // upper color
-            g.shadowColor = "none";
-            g.shadowBlur = 0;
-            //g.fillStyle = colorTuples[i % colorTuples.length][1];
-			g.fillStyle = the_tuple[1];
-            g.fillText(c, 0, 0);
-
-            g.restore();
+			// base color
+			tmpG.save();
+			
+			{
+				tmpG.fillStyle = the_tuple[0];
+				tmpG.rect(0, 0, middleTextSize * 2, middleTextSize * 2);
+				tmpG.fill();
+				
+				tmpG.translate(middleTextSize * 0.5, middleTextSize * 0.5);
+				
+				// second color
+				tmpG.fillStyle = the_tuple[1];
+				var rot = randomMiddleRot.nextDouble();
+				tmpG.save();
+				{
+					tmpG.translate(middleTextSize * 0.5, middleTextSize * 0.5);
+					tmpG.rotate(rot);
+					tmpG.translate(-middleTextSize * 0.5, -middleTextSize * 0.5);
+					tmpG.shadowColor = "rgba(0, 0, 0, 0.6)";
+					tmpG.shadowBlur = 10;
+					tmpG.fillRect(-middleTextSize * 2, middleTextSize * 0.5, middleTextSize * 4, middleTextSize * 2);
+				}
+				tmpG.restore();
+				
+				tmpG.fillStyle = "rgba(0, 0, 0, 1.0)";
+				tmpG.font = middleTextFont;
+				
+				tmpG.globalCompositeOperation = "destination-in";
+				tmpG.fillText(c, 0, 0);
+			}
+			
+			tmpG.restore();
+			
+			g.shadowColor = "rgba(0, 0, 0, 0.6)";
+			g.shadowBlur = 10;
+			g.drawImage(tmpCanvas, -middleTextSize * 0.5, -middleTextSize * 0.5);
 
             // go to next
             var metrics  = g.measureText(c);
