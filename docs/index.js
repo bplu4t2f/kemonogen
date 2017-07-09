@@ -159,17 +159,22 @@ window.onload = function()
 	var topColorLabel = document.getElementById("top_color_seed");
 	var middleLabel = document.getElementById("middle_seed");
 	var middleTiltLabel = document.getElementById("middle_tilt_seed");
-
-
-    function update(){
+	
+	var useTheShadowCheckBox = document.getElementById("use_the_shadow");
+	
+    function update()
+	{
 		// enforce closure
 		var topValue = topInput.value;
 		var middleValue = middleInput.value;
 		var bottomValue = bottomInput.value;
+		
+		var useTheShadow = useTheShadowCheckBox.checked;
+		
         //setTimeout(function()
 		//{
 		//	console.log(topInput.value);
-            setText(topValue, middleValue, bottomValue);
+            setText(topValue, middleValue, bottomValue, useTheShadow);
         //});
     }
 	
@@ -177,7 +182,7 @@ window.onload = function()
     middleInput.addEventListener("input", update);
     bottomInput.addEventListener("input", update);        
 
-    function setText(topText, middleText, bottomText)
+    function setText(topText, middleText, bottomText, useTheShadow)
 	{
 		topTiltLabel.innerHTML = seedTopTilt;
 		topColorLabel.innerHTML = seedTopColors;
@@ -321,8 +326,11 @@ window.onload = function()
 					tmpG.translate(middleTextSize * 0.5, middleTextSize * 0.5);
 					tmpG.rotate(rot);
 					tmpG.translate(-middleTextSize * 0.5, -middleTextSize * 0.5);
-					tmpG.shadowColor = "rgba(0, 0, 0, 0.6)";
-					tmpG.shadowBlur = 10;
+					if (useTheShadow)
+					{
+						tmpG.shadowColor = "rgba(0, 0, 0, 0.35)";
+						tmpG.shadowBlur = 7;
+					}
 					tmpG.fillRect(-middleTextSize * 2, middleTextSize * 0.5, middleTextSize * 4, middleTextSize * 2);
 				}
 				tmpG.restore();
@@ -406,6 +414,10 @@ window.onload = function()
 	randomizeMiddleTiltButton.addEventListener("click", function()
 	{
 		seedMiddleRot = (2147483648 * Math.random()) | 0;
+		update();
+	});
+	useTheShadowCheckBox.addEventListener("change", function()
+	{
 		update();
 	});
 		
